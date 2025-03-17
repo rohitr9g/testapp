@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bihar Board Quiz App</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background-color: #f0f0f0;
+        }
+        .hidden { display: none; }
+        .card { 
+            background-color: #fff; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+            margin-bottom: 20px;
+        }
+        input, select, button { 
+            width: 100%; 
+            padding: 10px; 
+            margin-top: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 5px;
+        }
+        .button { 
+            background-color: #4CAF50; 
+            color: white;
+            cursor: pointer;
+        }
+        .button:hover { 
+            background-color: #45a049; 
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Panel -->
+    <div id="login" class="card">
+        <h2>Login</h2>
+        <select id="user-type">
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+        </select>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button class="button" onclick="login()">Login</button>
+        <p>New user? <a href="#" onclick="showRegister()">Register here</a></p>
+    </div>
+
+    <!-- Register Panel -->
+    <div id="register" class="card hidden">
+        <h2>Register</h2>
+        <input type="text" id="reg-username" placeholder="Username">
+        <input type="password" id="reg-password" placeholder="Password">
+        <button class="button" onclick="registerUser()">Register</button>
+        <p>Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="admin-panel" class="card hidden">
+        <h2>Add Question</h2>
+        <input type="text" id="new-question" placeholder="Enter question">
+        <input type="text" id="option1" placeholder="Option 1">
+        <input type="text" id="option2" placeholder="Option 2">
+        <input type="text" id="option3" placeholder="Option 3">
+        <input type="text" id="option4" placeholder="Option 4">
+        <input type="number" id="correct-option" placeholder="Correct option (1-4)" min="1" max="4">
+        <button class="button" onclick="addQuestion()">Add Question</button>
+    </div>
+
+    <!-- User Panel -->
+    <div id="user-panel" class="card hidden">
+        <button class="button" onclick="startQuiz()">Start Quiz</button>
+    </div>
+
+    <!-- Quiz Panel -->
+    <div id="quiz-panel" class="card hidden">
+        <h2 id="question-number"></h2>
+        <p id="question-text"></p>
+        <div id="options"></div>
+    </div>
+
+    <script>
+        let questions = JSON.parse(localStorage.getItem('questions')) || [];
+        let currentQuestion = 0;
+        let score = 0;
+
+        const adminUsername = 'myAdmin';
+        const adminPassword = 'myPass123';
+
+        function showRegister() {
+            document.getElementById('login').classList.add('hidden');
+            document.getElementById('register').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('register').classList.add('hidden');
+            document.getElementById('login').classList.remove('hidden');
+        }
+
+        function registerUser() {
+            const username = document.getElementById('reg-username').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
+
+            if (username && password) {
+                localStorage.setItem(username, password);
+                alert('User registered successfully!');
+                showLogin();
+            } else {
+                alert('Please fill all fields.');
+            }
+        }
+
+        function login() {
+            const userType = document.getElementById('user-type').value;
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (userType === 'admin' && username === adminUsername && password === adminPassword) {
+                document.getElementById('login').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+            } else if (userType === 'user' && localStorage.getItem(username) === password) {
+                document.getElementById('login').classList.add('hidden');
+                document.getElementById('user-panel').classList.remove('hidden');
+            } else {
+                alert('Invalid credentials');
+            }
+        }
+
+        function addQuestion() {
+            const question = document.getElementById('new-question').value;
+            const options = [
+                document.getElementById('option1').value,
+                document.getElementById('option2').value,
+                document.getElementById('option3').value,
+                document.getElementById('option4').value
+            ];
+            const correct = parseInt(document.getElementById('correct-option').value);
+
+            if (question && options.every(opt => opt) && correct >= 1 && correct <= 4) {
+                questions.push({ question, options, correct });
+                localStorage.setItem('questions', JSON.stringify(questions));
+                alert('Question added successfully!');
+            } else {
+                alert('Please fill all fields correctly.');
+            }
+        }
+
+        function startQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById('user-panel').classList.add('hidden');
+            document.getElementById('quiz-panel').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentQuestion < questions.length) {
+                const q = questions[currentQuestion];
+                document.getElementById('question-number').textContent = `Question ${currentQuestion + 1}`;
+                document.getElementById('question-text').textContent = q.question;
+                document.getElementById('options').innerHTML = '';
+
+                q.options.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.textContent = opt;
+                    btn.className = 'button';
+                    btn.onclick = () => checkAnswer(index + 1 === q.correct);
+                    document.getElementById('options').appendChild(btn);
+                });
+            } else {
+                alert(`Quiz Over! Your score is: ${score}/${questions.length}`);
+                document.getElementById('quiz-panel').classList.add('hidden');
+            }
+        }
+
+        function checkAnswer(isCorrect) {
+            if (isCorrect) {
+                score++;
+                alert('Correct Answer!');
+            } else {
+                alert('Wrong Answer!');
+            }
+            currentQuestion++;
+            showQuestion();
+        }
+    </script>
+</body>
+</html>
